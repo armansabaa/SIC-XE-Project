@@ -7,6 +7,11 @@
 #pragma endregion
 #define testCase2
 using namespace std;
+void hamedFunction()
+{
+    printf("hamed function");
+
+}
 #ifdef testCase1
     ifstream file1("TC1.txt"), file2("TC1_.txt");
     ofstream fout ("Out1.txt");
@@ -17,6 +22,7 @@ using namespace std;
 #endif
 map<string, string> SymTab, OpTab;
 int i, curLoc;
+
 char hexAux[] ={'A','B','C','D','E','F'};
 char decAux[] ={ 10, 11, 12, 13, 14, 15};
 void preProcess()
