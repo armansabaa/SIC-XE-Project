@@ -125,7 +125,7 @@ int sizeBytes(string x)                                              //Returns t
     if(x[0] == 'C')
         return x.size() - 3 ;
     if(x[0] == 'X')
-        return (x.size()-3)/2;
+        return ((x.size()-3)/2)+((x.size()-3)%2);
     else
         printf("EORROR!!!");
 }

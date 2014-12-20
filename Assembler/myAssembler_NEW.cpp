@@ -50,15 +50,7 @@ void Pass_1()
         else if(inst.tOpcode == "RESB")
             curLoc+=inst.iOprnd;
         else if(inst.tOpcode == "BYTE"){
-            if(inst.tOprnd[0]=='X')
-            {
-//  %
-            }
             curLoc+=sizeBytes(inst.tOprnd);
-            if(inst.tOprnd[0]=='C')
-            {
- // %
-            }
         }
         else if (firstline)
             firstline=0;
