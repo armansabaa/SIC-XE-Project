@@ -7,11 +7,6 @@
 #pragma endregion
 #define testCase2
 using namespace std;
-void hamedFunction()
-{
-    printf("hamed function");
-
-}
 #ifdef testCase1
     ifstream file1("TC1.txt"), file2("TC1_.txt");
     ofstream fout ("Out1.txt");
