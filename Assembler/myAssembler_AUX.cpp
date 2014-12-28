@@ -8,14 +8,14 @@
 #define testCase2
 using namespace std;
 #ifdef testCase1
-    ifstream file1("TC1.txt"), file2("TC1_.txt");
+    ifstream file1("sicxe_INPUT.txt"), file2("sicxe_INPUT.txt");
     ofstream fout ("Out1.txt");
 #endif
 #ifdef testCase2
-    ifstream file1("TC2.txt"), file2("TC2_.txt");
+    ifstream file1("sicxe_INPUT.txt"), file2("sicxe_INPUT.txt");
     ofstream fout("Out2.txt");
 #endif
-map<string, string> SymTab, OpTab;
+map<string, string> SymTab, OpTab,Register;
 int i, curLoc;
 
 char hexAux[] ={'A','B','C','D','E','F'};
@@ -23,31 +23,71 @@ char decAux[] ={ 10, 11, 12, 13, 14, 15};
 void preProcess()
 {
     OpTab["ADD"] = "18";
+    OpTab["ADDF"] = "58";
+    OpTab["ADDR"] = "90";
     OpTab["AND"] = "40";
+    OpTab["CLEAR"] = "B4";
     OpTab["COMP"] = "28";
+    OpTab["COMPR"] = "A0";
+    OpTab["COMPF"] = "88";
     OpTab["DIV"] = "24";
+    OpTab["DIVF"] = "64";
+    OpTab["DIVR"] = "9C";
+    OpTab["FIX"] = "C4";
+    OpTab["FLOAT"] = "C0";
+    OpTab["HIO"] = "F4";
     OpTab["J"] = "3C";
     OpTab["JEQ"] = "30";
     OpTab["JGT"] = "34";
     OpTab["JLT"] = "38";
     OpTab["LDA"] = "00";
+    OpTab["LDB"] = "68";
+    OpTab["LDF"] = "70";
+    OpTab["LDL"] = "08";
+    OpTab["LDT"] = "74";
+    OpTab["LDX"] = "04";
+    OpTab["LDS"] = "6C";
     OpTab["JSUB"] = "48";
     OpTab["LDCH"] = "50";
-    OpTab["LDL"] = "08";
-    OpTab["LDX"] = "04";
+    OpTab["LPS"] = "D0";
     OpTab["MUL"] = "20";
+    OpTab["MULF"] = "60";
+    OpTab["MULR"] = "98";
+    OpTab["NORM"] = "C8";
     OpTab["OR"] = "44";
     OpTab["RD"] = "D8";
+    OpTab["RMO"] = "AC";
     OpTab["RSUB"] = "4C";
+    OpTab["SHIFTL"] = "A4";
+    OpTab["SHIFTR"] = "A8";
+    OpTab["SIO"] = "F0";
     OpTab["STA"] = "0C";
+    OpTab["STB"] = "78";
     OpTab["STCH"] = "54";
     OpTab["STL"] = "14";
+    OpTab["STF"] = "80";
+    OpTab["STI"] = "D4";
+    OpTab["STS"] = "7C";
+    OpTab["STT"] = "84";
     OpTab["STSW"] = "E8";
     OpTab["STX"] = "10";
     OpTab["SUB"] = "1C";
+    OpTab["SUBF"] = "5C";
+    OpTab["SSK"] = "EC";
+    OpTab["SUBR"] = "94";
+    OpTab["SVC"] = "B0";
     OpTab["TD"] = "E0";
+    OpTab["TIO"] = "F8";
     OpTab["TIX"] = "2C";
+    OpTab["TIXR"] = "B8";
     OpTab["WD"] = "DC";
+    Register["A"]="0";
+    Register["X"]="1";
+    Register["L"]="2";
+    Register["B"]="3";
+    Register["S"]="4";
+    Register["T"]="5";
+    Register["F"]="6";
 }
 struct Instruction
 {
@@ -72,6 +112,20 @@ string _toUpper(string inp)                                          //Rises all
         }
     }
     return inp;
+}
+string toUpperCase(string x)
+{
+    for(int i=0;i<x.size();i++)
+        x[i] = toupper(x[i]);
+    return x;
+}
+string decToHex(int number)
+{
+    char x[10];
+    itoa(number,x,16);
+    string y(x);
+    y=toUpperCase(y);
+    return y;
 }
 int stringToInt(string s)
 {
@@ -130,22 +184,7 @@ int sizeBytes(string x)                                              //Returns t
     else
         printf("EORROR!!!");
 }
-string decToHex(int x)
-{
-    int temp;
-    string ret="";
-    while(x)
-    {
-        temp = x%16;
-        if(temp>9)
-            ret+=hexAux[temp-10];
-        else
-            ret+=temp+'0';
-        x/=16;
-    }
-    reverse(ret.begin(),ret.end());
-    return ret;
-}
+
 void printInstruction (Instruction inst)
 {
     cout<<"Label = "<<inst.tLabel<<"\tOpcode = "<<inst.tOpcode<<"\tOperand ="<<inst.tOprnd<<"\t"<<decToHex(curLoc);
@@ -203,3 +242,46 @@ string raiseX(string x)
     x = decToHex(tempo);
     return x;
 }
+
+string convertIntToHexString(int number)
+{
+    char x[10];
+    itoa(number,x,16);
+    string y(x);
+    y=toUpperCase(y);
+    return y;
+}
+string convertCharsToAsciiString(string x)
+{
+    int y=0;
+    x=toUpperCase(x);
+    string ret,temp;
+    char arr[5];
+    for(int i=0;i<x.size();i++)
+    {
+        itoa(x[i],arr,16);
+        temp=arr;
+        if(temp.size()<2)temp.insert(0,"0");
+        ret+=temp;
+    }
+    return ret;
+}
+int myPow(int x,int power)
+{
+    int result=1;
+    for(int i=0;i<power;i++)
+        result*=x;
+    return result;
+}
+
+int convertIntStringToInt(string x)
+{
+    int result=0,c=0;
+    for(int i=x.size()-1;i>=0;i--)
+    {
+        result+=( (x[i]-'0') * myPow(10,c)  );
+        c++;
+    }
+    return result;
+}
+
