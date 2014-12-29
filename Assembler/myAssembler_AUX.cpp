@@ -92,7 +92,7 @@ void preProcess()
 struct Instruction
 {
     string tLabel, tOprnd, tOpcode;
-    int iOprnd;
+    int iOprnd,loc;
     Instruction (){}
     Instruction (string tLabel, string tOpcode, string tOprnd, int iOprnd)
     {
@@ -285,3 +285,14 @@ int convertIntStringToInt(string x)
     return result;
 }
 
+string six_places(string x)
+{
+    while(x.size()<6)x.insert(0,"0");
+    return x;
+}
+
+string two_places(string x)
+{
+    while(x.size()<2)x.insert(0,"0");
+    return x;
+}
