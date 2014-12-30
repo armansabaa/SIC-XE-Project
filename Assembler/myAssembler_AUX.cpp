@@ -8,11 +8,11 @@
 #define testCase2
 using namespace std;
 #ifdef testCase1
-    ifstream file1("sicxe_INPUT.txt"), file2("sicxe_INPUT.txt");
+    ifstream file1("sicxe_INPUT_literals.txt"), file2("sicxe_INPUT_literals.txt");
     ofstream fout ("Out1.txt");
 #endif
 #ifdef testCase2
-    ifstream file1("sicxe_INPUT.txt"), file2("sicxe_INPUT.txt");
+    ifstream file1("sicxe_INPUT_literals.txt"), file2("sicxe_INPUT_literals.txt");
     ofstream fout("Out2.txt");
 #endif
 map<string, string> SymTab, OpTab,Register;
@@ -295,4 +295,18 @@ string two_places(string x)
 {
     while(x.size()<2)x.insert(0,"0");
     return x;
+}
+
+void printLITTAB(map<string,pair<string,string> > LitTab){
+    map<string,pair<string,string> >::iterator it=LitTab.begin();
+    for(it=LitTab.begin();it!=LitTab.end();++it)
+        cout<< it->first << "||" << it->second.first<< "||" << it->second.second << endl;
+}
+
+void printSymbol(map<string,string> symbolTable)
+{
+    map<string,string>::iterator its=symbolTable.begin();
+    for(its=symbolTable.begin();its!=symbolTable.end();++its)
+        cout<< its->first << "-->" << its->second << endl;
+
 }

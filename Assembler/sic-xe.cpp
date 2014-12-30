@@ -22,6 +22,8 @@ vector<string> objectCode;
 vector<string> HTEformat;
 vector<string> modifications;
 string BASE,programLength;
+map<string, pair<string,string> > LitTab;
+queue<string> literalsLeft;
 
 void readInput()
 {
@@ -29,9 +31,10 @@ void readInput()
     while(true){
         inst = scanInstruction();
      //   cout << inst.tLabel << " " << inst.tOpcode << " " << inst.tOprnd << endl;
+
+        programCode.push_back(inst);
         if(inst.tOpcode == "END")
             break;
-        programCode.push_back(inst);
     }
 }
 
@@ -59,28 +62,77 @@ int getFormat(Instruction inst){
     return 3;
 }
 
-int curLocValue()
+void addLiteralToLITTAB(Instruction inst,int curLoc)
 {
+    string temp;
+    inst.tOprnd=inst.tOprnd.substr(1,inst.tOprnd.size());
+    if(inst.tOprnd[0]=='C')
+            temp=convertCharsToAsciiString(inst.tOprnd.substr(2,inst.tOprnd.size()-3));
+        else
+            temp=inst.tOprnd.substr(2,inst.tOprnd.size()-3);
 
+    if(!LitTab.count(inst.tOprnd) || !(LitTab.count(inst.tOprnd) && LitTab[inst.tOprnd].first==temp)){
+        LitTab[inst.tOprnd].first=temp;
+        literalsLeft.push(inst.tOprnd);
+    }
+
+}
+
+pair<int,int> addLiterls(int curLoc,int index){
+    string temp,x;
+    Instruction inst;
+    std::vector<Instruction>::iterator its=programCode.begin();
+    for(i=0;i<index;i++){
+        its++;
+
+    }
+    //cout << literalsLeft.size() <<endl;
+    while(!literalsLeft.empty())
+    {
+        x=literalsLeft.front();
+        temp=x+" BYTE "+x;
+        inst = Instruction(x,"BYTE",x,0);
+        programCode.insert(its,inst);//cout<<"a7a";
+        temp=decToHex(curLoc);
+        while(temp.size()<3)temp.insert(0,"0");
+        LitTab[x].second=temp;
+        curLoc+=sizeBytes(x);
+        literalsLeft.pop();
+        its++;
+        index++;
+    }
+
+    return make_pair(curLoc,index);
 }
 
 void passOne()
 {
     int i,format,curLoc = programCode[0].iOprnd;
     string temp;
+    int z=programCode.size();
     Instruction inst;
-    for(i=1;i<programCode.size();i++)
+    bool literalsAdded=0;
+    pair<int,int> hamada;
+    for(i=1;i<z;i++)
     {
         programCode[i].loc=curLoc;
-        //cout << curLoc << " " <<programCode[i].loc<< endl;
         inst=programCode[i];
         format=getFormat(inst);
-       // cout << inst.tLabel<<endl;
         if(format==0)
             continue;
         if(inst.tOpcode=="BASE")
         {
             BASE=inst.tOprnd;
+            continue;
+        }
+        if(inst.tOprnd[0]=='=')
+            addLiteralToLITTAB(inst,curLoc);
+        if(inst.tLabel=="LTORG")//add LTORG as label
+        {
+            hamada=addLiterls(curLoc,i+1);
+            curLoc=hamada.first;
+            i=hamada.second-1;
+            literalsAdded=1;
             continue;
         }
         if(inst.tLabel != "")
@@ -105,6 +157,11 @@ void passOne()
             else if(inst.tOpcode == "BYTE")
                 curLoc+=sizeBytes(inst.tOprnd);
         }
+       // z=programCode.size();
+    }
+    if(!literalsLeft.empty()){
+        hamada=addLiterls(curLoc,i+1);
+        curLoc=hamada.first;
     }
     programLength=decToHex(curLoc-programCode[0].iOprnd);
     programLength=six_places(programLength);
@@ -123,7 +180,7 @@ bool isIndexed(string x){
 string makeFormat3(Instruction inst,int curLoc){
     int middle=0,disp=-curLoc,opcode=hexToDec(OpTab[inst.tOpcode]);
     string __final,xx;
-    bool in=0,im=0,b=0,pc=1;
+    bool in=0,im=0,b=0,pc=1,lit=0;
     char temp[100];
     if(isImmediate(inst.tOprnd)){
         im=1;
@@ -166,15 +223,19 @@ string makeFormat3(Instruction inst,int curLoc){
             b=1;pc=0;
         }
     }
-    else
-        if(!in  &&  !im){
+    else{
+        if(LitTab.count(inst.tOprnd.substr(1,inst.tOprnd.size())))
+            disp+=hexToDec((LitTab[inst.tOprnd.substr(1,inst.tOprnd.size())].second));
+        else if(!in  &&  !im)
             disp+=hexToDec(SymTab[inst.tOprnd]);
-            if(disp<-2048 || disp>2047){
-                disp+=curLoc;
-                disp-=hexToDec(SymTab[BASE]);
-                pc=0;b=1;
-            }
+
+        if(disp<-2048 || disp>2047){
+            disp+=curLoc;
+            disp-=hexToDec(SymTab[BASE]);
+            pc=0;b=1;
+
         }
+    }
 
     if(pc)middle+=2;
     if(b)middle+=4;
@@ -216,10 +277,12 @@ string makeFormat4(Instruction inst){
         inst.tOprnd=inst.tOprnd.substr(0,inst.tOprnd.size()-2);
         disp=SymTab[inst.tOprnd];
     }
-    else
-        if(!in && !im)
+    else{
+        if(LitTab.count(inst.tOprnd.substr(1,inst.tOprnd.size())))
+            disp=hexToDec((LitTab[inst.tOprnd.substr(1,inst.tOprnd.size())].second));
+        else if(!in && !im)
             disp=SymTab[inst.tOprnd];
-
+    }
     //adding modification record
     if(!im_value)
         modifications.push_back(six_places(decToHex(inst.loc+1)));
@@ -237,12 +300,17 @@ void passTwo(){
     int z,curLoc = programCode[0].iOprnd,m;
     string temp,charr,n;
     pair<string,int> x;
+    map<string,pair<string,string> >::iterator it=LitTab.begin();
     for(int i=1;i<programCode.size();i++)
     {
+//        cout << SymTab.size() << "  " << i << endl;
         temp="";
         inst=programCode[i];
         if(inst.tOpcode=="BASE"){
             temp="BASE";
+        }
+        else if(inst.tLabel=="LTORG"){
+            temp="LTORG";
         }
         else{
         switch (getFormat(inst)){
@@ -297,6 +365,7 @@ void passTwo(){
         }
         if(temp.size())objectCode.push_back(temp);
     }
+
 }
 
 /*void printSymbol(map<string,string> stable)
@@ -308,7 +377,7 @@ void passTwo(){
 }*/
 void print(vector<string> x){
     for(int i=0;i<x.size();i++)
-        cout << x[i]<< endl;
+        cout <<x[i]<< endl;
 }
 
 
@@ -344,13 +413,15 @@ void addTpart(){
     bool newRecord=0;
     Instruction inst;
     string temp="T."+six_places(programCode[0].tOprnd),record,siz;
+    //cout << "size "<<objectCode.size() <<endl;
     for(int i=0;i<objectCode.size();i++){
+
         cur=objectCode[i];
         inst=programCode[i+1];
-        if(getFormat(inst)==0 || inst.tOpcode=="BASE"){
+        if(getFormat(inst)==0 || inst.tOpcode=="BASE" ||inst.tOpcode=="END"){
             continue;
         }
-        if(inst.tOpcode=="RESW" || inst.tOpcode=="RESB")
+        if(inst.tOpcode=="RESW" || inst.tOpcode=="RESB" || inst.tOpcode=="LTORG")
         {
             newRecord=1;
             continue;
@@ -366,6 +437,7 @@ void addTpart(){
             record.clear();
             temp="T."+six_places(decToHex(inst.loc));
         }
+        if(cur=="RESERVED" ||cur=="BASE" || cur=="LTORG")continue;
         record+="."+cur;
 
         if(getFormat(inst)==4 || getFormat(inst)==3 || getFormat(inst)==2)
@@ -375,8 +447,8 @@ void addTpart(){
         else if(getFormat(inst)==-1){
             if(inst.tOpcode=="WORD")
                 counter+=3;
-            else if(inst.tOpcode == "BYTE")
-                counter+=sizeBytes(inst.tOprnd);
+            else
+                counter+=(cur.size()/2);
         }
     }
     if(record.size()!=0)
@@ -407,21 +479,23 @@ vector<string> getHTERecord(){
     return HTEformat;
 }
 
-/*int main()
+int main()
 {
     preProcess();
     readInput();
-    //for(i=0;i<programCode.size();i++)
-      //  printInstruction(programCode[i]);
     passOne();
+ //   for(i=0;i<programCode.size();i++)
+  //      printInstruction(programCode[i]);
     passTwo();
+   // print(objectCode);
     generateHTEformat();
    // printSymbol(SymTab);
-    //print(objectCode);
+    //printLITTAB(LitTab);
     print(HTEformat);
+    //printSymbol(SymTab);
     //vector<Instruction> getInstructions();
     //vector<string> getObjectCode();
     //vector<string> getHTERecord();
 	return 0;
-}*/
+}
 
